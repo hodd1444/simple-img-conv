@@ -1,113 +1,170 @@
-import Image from "next/image";
+'use client'
 
-export default function Home() {
+import { useState, useRef, useEffect } from 'react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Progress } from "@/components/ui/progress"
+import { Camera, Download, Image as ImageIcon } from 'lucide-react'
+
+export default function Page() {
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null)
+  const [convertedImage, setConvertedImage] = useState<string | null>(null)
+  const [outputFormat, setOutputFormat] = useState<string>('png')
+  const [isConverting, setIsConverting] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const [lastConvertedFile, setLastConvertedFile] = useState<string | null>(null)
+  const [lastConvertedFormat, setLastConvertedFormat] = useState<string | null>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      const file = event.target.files[0]
+      setSelectedFile(file)
+      setConvertedImage(null)
+      setLastConvertedFile(null)
+      
+      // Create thumbnail
+      const reader = new FileReader()
+      reader.onload = (e) => setThumbnailUrl(e.target?.result as string)
+      reader.readAsDataURL(file)
+    }
+  }
+
+  const handleFormatChange = (value: string) => {
+    setOutputFormat(value)
+    if (lastConvertedFormat !== value) {
+      setConvertedImage(null)
+      setLastConvertedFile(null)
+      setLastConvertedFormat(null)
+    }
+  }
+
+  const convertImage = () => {
+    if (!selectedFile) return
+
+    setIsConverting(true)
+    setProgress(0)
+
+    const img = new Image()
+    img.onload = () => {
+      if (canvasRef.current) {
+        const canvas = canvasRef.current
+        canvas.width = img.width
+        canvas.height = img.height
+        const ctx = canvas.getContext('2d')
+        if (ctx) {
+          ctx.drawImage(img, 0, 0)
+          
+          // Simulate conversion progress
+          let currentProgress = 0
+          const progressInterval = setInterval(() => {
+            currentProgress += 10
+            setProgress(currentProgress)
+            if (currentProgress >= 100) {
+              clearInterval(progressInterval)
+              const dataUrl = canvas.toDataURL(`image/${outputFormat}`)
+              setConvertedImage(dataUrl)
+              setIsConverting(false)
+              setLastConvertedFile(selectedFile.name)
+              setLastConvertedFormat(outputFormat)
+            }
+          }, 200)
+        }
+      }
+    }
+    img.src = URL.createObjectURL(selectedFile)
+  }
+
+  useEffect(() => {
+    return () => {
+      if (thumbnailUrl) {
+        URL.revokeObjectURL(thumbnailUrl)
+      }
+    }
+  }, [thumbnailUrl])
+
+  const showConvertButton = selectedFile && (!convertedImage || selectedFile.name !== lastConvertedFile || outputFormat !== lastConvertedFormat)
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 text-gray-100 flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-gray-800 rounded-lg shadow-2xl overflow-hidden">
+        <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-6">
+          <h1 className="text-3xl font-bold text-white flex items-center justify-center">
+            <Camera className="mr-3 h-8 w-8" /> Simple Image Converter
+          </h1>
+        </div>
+        <div className="p-6 space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="image-upload" className="text-gray-300">Select an image</Label>
+            <div className="flex items-center space-x-2">
+              <Button 
+                onClick={() => fileInputRef.current?.click()} 
+                variant="outline"
+                className="w-full bg-gray-700 hover:bg-gray-600 text-gray-100 border-gray-600 transition-colors duration-200"
+              >
+                <ImageIcon className="mr-2 h-4 w-4" /> Choose File
+              </Button>
+              <Input 
+                id="image-upload" 
+                type="file" 
+                accept="image/*" 
+                onChange={handleFileChange} 
+                className="hidden" 
+                ref={fileInputRef}
+              />
+            </div>
+            {selectedFile && (
+              <div className="flex items-center space-x-2 mt-2">
+                {thumbnailUrl && (
+                  <img src={thumbnailUrl} alt="Thumbnail" className="w-12 h-12 object-cover rounded" />
+                )}
+                <p className="text-sm text-gray-400 truncate flex-1">{selectedFile.name}</p>
+              </div>
+            )}
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="format-select" className="text-gray-300">Select output format</Label>
+            <Select onValueChange={handleFormatChange}>
+              <SelectTrigger id="format-select" className="bg-gray-700 border-gray-600 text-gray-100">
+                <SelectValue placeholder="Select format" />
+              </SelectTrigger>
+              <SelectContent className="bg-gray-700 border-gray-600 text-gray-100">
+                <SelectItem value="png">PNG</SelectItem>
+                <SelectItem value="jpeg">JPEG</SelectItem>
+                <SelectItem value="webp">WebP</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {isConverting ? (
+            <div className="space-y-2">
+              <Progress value={progress} className="w-full" />
+              <p className="text-center text-sm text-gray-400">Converting... {progress}%</p>
+            </div>
+          ) : showConvertButton ? (
+            <Button 
+              onClick={convertImage} 
+              disabled={!selectedFile}
+              className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white transition-colors duration-200"
+            >
+              Convert Image
+            </Button>
+          ) : convertedImage ? (
+            <a href={convertedImage} download={`${selectedFile?.name.split(".")[0]}.${outputFormat}`} className="inline-block w-full">
+              <Button className="w-full bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white transition-colors duration-200">
+                <Download className="mr-2 h-4 w-4" /> Download Converted Image
+              </Button>
+            </a>
+          ) : null}
+          
+          <canvas ref={canvasRef} style={{ display: 'none' }} />
         </div>
       </div>
-
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  );
+    </div>
+  )
 }
