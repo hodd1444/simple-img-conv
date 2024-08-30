@@ -23,24 +23,24 @@ cd simple-img-conv
 npm install
 ```
 
-🏃‍♂️ Running the Project
+#### 🏃‍♂️ Running the Project
 To start the development server, simply run: `npm run dev`
 
 Open your browser and navigate to http://localhost:3000. Voilà! You're ready to convert some images.
 
-🧑‍💻 Usage
+#### 🧑‍💻 Usage
 Upload Your Image: Click on the upload button and select the image you want to convert.
 Choose Format: Select the desired output format from the dropdown.
 Convert: Hit the convert button and watch the magic happen.
 Download: Once the conversion is done, download your shiny new image.
 
-🧩 Components
+#### 🧩 Components
 All UI components come from the [shadcn-ui library](https://ui.shadcn.com). Go check it out, it's truly amazing!
 
-🤝 Contributing
+#### 🤝 Contributing
 Want to make this project even better? Contributions are welcome! Fork the repo, start creating and submit a pull request. Don't forget to add a funny commit message. 😜 (Idk why you would want to contribute to something like this but alrighty)
 
-📜 License
+#### 📜 License
 This project is licensed under the MIT License.
 
 
