@@ -9,11 +9,11 @@ Welcome to the **Simple Image Converter**! 🎉 As the name suggests, this is a 
 - **User-Friendly Interface** 🖱️: Simple and intuitive UI that even your grandma can use.
 - **Fast and Efficient** ⚡: Lightning-fast conversions without compromising quality.
 
-## 🌐 
+## 🌐 Try it out
 
 If you don't want to run the converter yourself, go ahead and try it out [here](https://sic.hodd.xyz). If you want to run it on your machine, follow the instructions in `🛠️ Installation`
 
-## 🛠️ Installation
+### 🛠️ Installation
 
 First things first, let's get you set up. Clone the repo and install the dependencies:
 
